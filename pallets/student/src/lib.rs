@@ -66,7 +66,7 @@ pub mod pallet {
 			// Define new student
 			// Update on chain storage
 
-			Self::deposit_event(Event::CreatedStudent { acccount: student });
+			Self::deposit_event(Event::CreatedStudent { account: student });
 
 			Ok(())
 		}
@@ -88,8 +88,8 @@ pub mod pallet {
 			// TODO
 			// Update modified info to onchain storage
 
-			Self::deposit_event(Event::UpdatedStudent { acccount: student });
-			OK(())
+			Self::deposit_event(Event::UpdatedStudent { account: student });
+			Ok(())
 		}
 	}
 }
