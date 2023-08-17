@@ -2,7 +2,6 @@
 
 
 
-
 <details>
 <summary> EXERCISE 02 : Create Pallet Kitties </summary>
   
@@ -49,13 +48,13 @@
     <strong>Verify whether your extrinsic call logic is correct or not. Remember to start your local node and access polkadotjs explorer</strong>
   <ul>
     <li>Create first kitty successfully</li>
-    <img src="images/Create_first_kitty.png">
+    <img src="../../images/Create_first_kitty.png">
     <li>Access on-chain storage </li>
-    <img src="images/Access_on_chain_storage.png">
+    <img src="../../images/Access_on_chain_storage.png">
     <li>Create second kitty successfully</li>
-    <img src="images/Create_second_kitty.png">
+    <img src="../../images/Create_second_kitty.png">
     <li>Create duplicate kitty -> Emit DuplicateKitty Error </li>
-    <img src="images/Duplicate_Kitty.png">
+    <img src="../../images/Duplicate_Kitty.png">
   </ul>
 
   </details>
