@@ -13,6 +13,7 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+use scale_info::prelude::vec::Vec;
 
 #[frame_support::pallet]
 pub mod pallet {
