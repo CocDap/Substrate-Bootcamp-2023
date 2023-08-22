@@ -13,7 +13,7 @@ pub mod pallet {
 
 	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, Default, Debug)]
 	pub struct Student {
-		name: [u8; 32],
+		name: [u8; 4],
 		age: u16,
 		grade: u8,
 	}
@@ -30,7 +30,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn map_person_slice)]
-	pub type Students<T: Config> = StorageMap<_, Blake2_128, T::AccountId, Student, ValueQuery>;
+	pub type Students<T: Config> = StorageMap<_, Blake2_128, T::AccountId, Student, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -52,21 +52,44 @@ pub mod pallet {
 		#[pallet::weight(10_000)]
 		pub fn create_student(
 			origin: OriginFor<T>,
-			name: [u8; 32],
+			name: [u8; 4],
 			age: u16,
 			grade: u8,
 		) -> DispatchResult {
-			let student = ensure_signed(origin)?;
-
+			let who = ensure_signed(origin)?;
+			//ensure_root(origin)?;
 			// TODO
 			// check student is existed (return StudentExisted) or not
 			// Each student can only create information once
-
+			//ensure!(!Self::map_person_slice(&who).is_some(), Error::<T>::StudentExisted);
+			//ensure!(!Students::<T>::contains_key(&who), Error::<T>::StudentExisted);
 			// TODO
 			// Define new student
 			// Update on chain storage
+			// khi get thông tin thì 2 trường hợp
+			// match
+			// Some(value) , None
 
-			Self::deposit_event(Event::CreatedStudent { account: student });
+			// if Students::<T>::get(&who).is_some(){
+			// 	let student = Student::<T>::get(&who).unwrap();
+			// }
+			// if Students::<T>::get(&who).is_some(){
+			// 	return Err(Error::<T>::StudentExisted.into())
+
+			// }
+			// else {
+			// 	let new_student = Student { name, age, grade };
+			// 	<Students<T>>::insert(&who, new_student);
+
+			// }
+			if let Some(_) = Students::<T>::get(&who) {
+				return Err(Error::<T>::StudentExisted.into())
+			} else {
+				let new_student = Student { name, age, grade };
+				<Students<T>>::insert(&who, new_student);
+			}
+
+			Self::deposit_event(Event::CreatedStudent { account: who });
 
 			Ok(())
 		}
@@ -74,11 +97,20 @@ pub mod pallet {
 		#[pallet::call_index(1)]
 		#[pallet::weight(10_000)]
 		pub fn update_student(origin: OriginFor<T>, age: u16, grade: u8) -> DispatchResult {
-			let student = ensure_signed(origin)?;
+			let who = ensure_signed(origin)?;
 
 			// TODO
 			// check student is existing or not (return NotFoundStudent)
 
+			// let updated_student = match Students::<T>::get(&who) {
+			// 	Some(mut s) => {
+			// 		s.age = age;
+			// 		s.grade = grade;
+			// 		s
+			// 	},
+
+			// 	None => return Err(Error::<T>::NotFoundStudent.into()),
+			// };
 			// TODO
 			// Get student info
 
@@ -87,8 +119,16 @@ pub mod pallet {
 
 			// TODO
 			// Update modified info to onchain storage
+			//Students::<T>::insert(&who, updated_student);
 
-			Self::deposit_event(Event::UpdatedStudent { account: student });
+			Students::<T>::mutate(&who, |student| {
+				if let Some(s) = student {
+					s.age = age;
+					s.grade = grade;
+				}
+			});
+
+			Self::deposit_event(Event::UpdatedStudent { account: who });
 			Ok(())
 		}
 	}
