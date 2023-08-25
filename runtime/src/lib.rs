@@ -229,10 +229,10 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 /// Existential deposit.
-pub const EXISTENTIAL_DEPOSIT: u128 = 500;
+pub const EXISTENTIAL_DEPOSIT: u128 = 500000000000;
 
 impl pallet_balances::Config for Runtime {
-	type MaxLocks = ConstU32<50>;
+	type MaxLocks = ConstU32<5000>;
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	/// The type for recording an account's balance.
@@ -274,6 +274,10 @@ impl pallet_student::Config for Runtime {
 impl pallet_kitties::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
+impl pallet_todo::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
 
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -295,6 +299,7 @@ construct_runtime!(
 		TemplateModule: pallet_template,
 		StudentModule: pallet_student,
 		KittiesModule: pallet_kitties,
+		ToDoModule: pallet_todo,
 	}
 );
 
