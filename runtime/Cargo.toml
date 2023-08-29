@@ -18,6 +18,7 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 
 pallet-aura = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
 pallet-balances = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
+pallet-nicks = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
 frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
 pallet-grandpa = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
 pallet-sudo = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
@@ -52,6 +53,8 @@ pallet-template = { version = "4.0.0-dev", default-features = false, path = "../
 pallet-student = { version = "4.0.0-dev", default-features = false, path = "../pallets/student" }
 pallet-kitties = { version = "4.0.0-dev", default-features = false, path = "../pallets/kitties" }
 pallet-todo = { version = "4.0.0-dev", default-features = false, path = "../pallets/todo" }
+pallet-tightly-coupling = { version = "4.0.0-dev", default-features = false, path = "../pallets/tightly-coupling" }
+pallet-loosely-coupling = { version = "4.0.0-dev", default-features = false, path = "../pallets/loosely-coupling" }
 
 [build-dependencies]
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate.git", optional = true , branch = "polkadot-v0.9.40" }
@@ -93,6 +96,8 @@ std = [
 	"pallet-student/std",
 	"pallet-kitties/std",
 	"pallet-todo/std",
+	"pallet-tightly-coupling/std",
+	"pallet-loosely-coupling/std"
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",

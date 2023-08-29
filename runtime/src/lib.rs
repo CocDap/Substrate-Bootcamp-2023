@@ -278,6 +278,15 @@ impl pallet_todo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
+impl pallet_tightly_coupling::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl pallet_loosely_coupling::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type IncreaseValue = TemplateModule;
+	type Amount = ConstU32<10>;
+}
 
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -300,6 +309,8 @@ construct_runtime!(
 		StudentModule: pallet_student,
 		KittiesModule: pallet_kitties,
 		ToDoModule: pallet_todo,
+		TightlyModue: pallet_tightly_coupling,
+		LooselyModule: pallet_loosely_coupling,
 	}
 );
 

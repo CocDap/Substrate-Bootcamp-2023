@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::pallet_prelude::DispatchResult;
 /// Edit this file to define custom logic or remove it if it is not needed.
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://docs.substrate.io/reference/frame-pallets/>
@@ -15,12 +16,12 @@ mod tests;
 mod benchmarking;
 
 use scale_info::prelude::vec::Vec;
-
+use frame_support::pallet_prelude::*;
+use frame_system::pallet_prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
+
 	
 
 	#[derive(
@@ -51,6 +52,11 @@ pub mod pallet {
 	// https://docs.substrate.io/main-docs/build/runtime-storage/
 	#[pallet::storage]
 	#[pallet::getter(fn something)]
+	//helper function
+	// impl Pallet {
+	//  pub fn something() -> {}
+	//}
+	//<Something<T>>::get()
 	// Learn more about declaring storage items:
 	// https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
 	pub type Something<T> = StorageValue<_, u32>;
@@ -246,4 +252,33 @@ impl<T: Config> Pallet<T> {
 
 		return array;
 	}
+
+	pub fn update_storage(new_value: u32) -> DispatchResult {
+
+		<Something<T>>::put(new_value);
+
+
+		Ok(())
+	}
 }
+
+
+pub trait DoSomething {
+	fn increase_value(amount: u32) -> DispatchResult;
+}
+
+impl<T: Config> DoSomething for Pallet<T> {
+	fn increase_value(amount: u32) -> DispatchResult{
+		let current_value = Self::something().unwrap_or_default();
+		<Something<T>>::put(current_value + amount);
+
+		Ok(())
+	
+	
+	}
+
+
+}
+
+
+

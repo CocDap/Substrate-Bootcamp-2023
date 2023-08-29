@@ -3,7 +3,9 @@
 pub use pallet::*;
 
 use frame_support::{inherent::Vec, pallet_prelude::*};
+use frame_support::dispatch::*;
 use frame_system::pallet_prelude::*;
+// use std::fmt::{Debug, Formatter, Result}; ko sử dụng dc 
 
 // Define Kitties
 // #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
@@ -15,7 +17,7 @@ use frame_system::pallet_prelude::*;
 // 	pub owner: AccountId
 // }
 
-#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct Kitty<T: Config> {
 	pub dna: Vec<u8>,
@@ -24,6 +26,18 @@ pub struct Kitty<T: Config> {
 	pub owner: T::AccountId,
 }
 
+impl<T: Config > fmt::Debug for Kitty<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Kitty")
+         .field("dna", &self.dna)
+         .field("price", &self.price)
+         .field("gender", &self.gender)
+         .field("owner", &self.owner)
+         .finish()
+    }
+
+
+}
 // Define Gender
 #[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum Gender {
@@ -106,6 +120,7 @@ pub mod pallet {
 				owner: owner.clone()
 			
 			};
+			log::info!("New kitty:{:?}", new_kitty);
 
 			// TODO: Get current kitty id
 			let current_id = Self::kitty_id();
