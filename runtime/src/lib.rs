@@ -276,6 +276,7 @@ impl pallet_kitties::Config for Runtime {
 }
 impl pallet_todo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type MyCurrency = Balances;
 }
 
 impl pallet_tightly_coupling::Config for Runtime {
@@ -288,6 +289,31 @@ impl pallet_loosely_coupling::Config for Runtime {
 	type Amount = ConstU32<10>;
 }
 
+impl pallet_nicks::Config for Runtim {
+	type RuntimeEvent = RuntimeEvent;
+
+	/// The currency trait.
+	type Currency = Balances;
+
+	/// Reservation fee.
+	type ReservationFee = ConstU128<100000>;
+
+	/// What to do with slashed funds.
+	type Slashed = ();
+
+	/// The origin which may forcibly set or remove a name. Root can always do this.
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+
+	/// The minimum length a name may be.
+
+	type MinLength = ConstU32<5>;
+
+	/// The maximum length a name may be.
+
+	type MaxLength = ConstU32<10>;
+
+
+}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -311,6 +337,7 @@ construct_runtime!(
 		ToDoModule: pallet_todo,
 		TightlyModue: pallet_tightly_coupling,
 		LooselyModule: pallet_loosely_coupling,
+		Nicks: pallet_nicks
 	}
 );
 

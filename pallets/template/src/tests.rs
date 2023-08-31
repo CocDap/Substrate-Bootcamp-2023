@@ -25,3 +25,18 @@ fn correct_error_for_none_value() {
 		);
 	});
 }
+
+#[test]
+fn cause_error_should_work() {
+	new_test_ext().execute_with(|| {
+		// Ensure the expected error is thrown when no value is present.
+		// assert_noop!(
+		// 	TemplateModule::cause_error(RuntimeOrigin::signed(1)),
+		// 	Error::<Test>::NoneValue
+		// );
+		assert_ok!(TemplateModule::do_something(RuntimeOrigin::signed(1), 10));
+		assert_ok!(TemplateModule::cause_error(RuntimeOrigin::signed(1)));
+		assert_eq!(TemplateModule::something(),Some(11));
+
+	});
+}

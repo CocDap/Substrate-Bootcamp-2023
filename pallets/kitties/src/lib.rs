@@ -5,6 +5,10 @@ pub use pallet::*;
 use frame_support::{inherent::Vec, pallet_prelude::*};
 use frame_support::dispatch::*;
 use frame_system::pallet_prelude::*;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 // use std::fmt::{Debug, Formatter, Result}; ko sử dụng dc 
 
 // Define Kitties
@@ -21,7 +25,7 @@ use frame_system::pallet_prelude::*;
 #[scale_info(skip_type_params(T))]
 pub struct Kitty<T: Config> {
 	pub dna: Vec<u8>,
-	pub price: u64,
+	pub price: BalanceOf<T>,
 	pub gender: Gender,
 	pub owner: T::AccountId,
 }
@@ -44,6 +48,9 @@ pub enum Gender {
 	Male,
 	Female,
 }
+use frame_support::traits::Currency;
+type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+type BalanceOf<T> = <<T as Config>::MyCurrency as Currency<AccountIdOf<T>>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -59,6 +66,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type MyCurrency: Currency<Self::AccountId>;
 		
 	}
 
@@ -85,7 +93,7 @@ pub mod pallet {
 		Created { kitty: Vec<u8>, owner: T::AccountId },
 		// Transfer
 		// Buy  
-		// Set Price 
+		SetPrice {kitty: Vec<u8>, price: BalanceOf<T>},
 		
 	}
 
@@ -93,13 +101,15 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		DuplicateKitty,
-		OverFlow
+		OverFlow,
+		NoKitty,
+		NotOwner
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
+		#[pallet::weight(5000)]
 		pub fn create_kitty(origin: OriginFor<T>, dna: Vec<u8>) -> DispatchResult {
 			// Make sure the caller is from a signed origin
 			let owner = ensure_signed(origin)?;
@@ -116,7 +126,7 @@ pub mod pallet {
 			let new_kitty = Kitty::<T> {
 				dna: dna.clone(),
 				gender,
-				price: 0, 
+				price: 0u32.into(), 
 				owner: owner.clone()
 			
 			};
@@ -144,6 +154,24 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::call_index(1)]
+		#[pallet::weight(0)]
+		pub fn set_price(origin: OriginFor<T>, dna: Vec<u8>, amount: BalanceOf<T> ) -> DispatchResult {
+			let owner = ensure_signed(origin)?;
+
+			// get kitty
+			let mut kitty = Kitties::<T>::get(&dna).ok_or(Error::<T>::NoKitty)?;
+			ensure!(kitty.owner == owner, Error::<T>::NotOwner);
+
+			kitty.price = amount;
+			Kitties::<T>::insert(&dna, kitty);
+
+			Self::deposit_event(Event::SetPrice { kitty: dna, price: amount });
+
+			Ok(())
+		}
+
 	}
 }
 

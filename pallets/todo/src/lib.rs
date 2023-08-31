@@ -20,6 +20,18 @@ pub struct Task {
 pub struct ToDoList {
 	tasks: Vec<Task>,
 }
+use frame_support::traits::{Currency, ExistenceRequirement};
+
+type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+// làm sao để lấy dc associated type Balance của trait Currency
+
+// type BalanceOf<T> = <<T as Config>::MyCurrency as Currency<<T as frame_system::Config>::AccountId>>::Balance ;
+type BalanceOf<T> = <<T as Config>::MyCurrency as Currency<AccountIdOf<T>>>::Balance ;
+// alias type
+// <T as frame_system::Config>::AccountId
+// type AccountIdof<T> = <T as frame_system::Config>::AccountId
+//type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
+
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -36,6 +48,10 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		//type MyCurrency : Currency<Self::AccountId>;
+		// type AccountId : ..
+		//type MyCurrency : Currency<<Self as frame_system::Config>::AccountId>;
+		type MyCurrency: Currency<AccountIdOf<Self>>;
 	}
 
 	// The pallet's runtime storage items.
@@ -151,7 +167,7 @@ pub mod pallet {
 
 			let mut todo = Todo::<T>::get(&who).ok_or(Error::<T>::NotOwner)?;
 
-			// cách này dùng dc, nhưng sẽ vấn đề nếu ko có task id 
+			// cách này dùng dc, nhưng sẽ vấn đề nếu ko có task id
 			todo.tasks.retain(|task| task_id != task.id);
 
 			Todo::<T>::insert(&who, todo);
@@ -203,7 +219,7 @@ pub mod pallet {
 						None => return Err(Error::<T>::NotOwner.into()),
 					}
 				} else {
-					return Err(Error::<T>::NotOwner.into())
+					return Err(Error::<T>::NotOwner.into());
 				}
 			})?;
 			// Emit an event.
@@ -212,5 +228,25 @@ pub mod pallet {
 			// Return a successful DispatchResultWithPostInfo
 			Ok(())
 		}
+
+		#[pallet::call_index(10)]
+		#[pallet::weight(10_000)]
+		pub fn transfer_coin(
+			origin: OriginFor<T>,
+			to: T::AccountId,
+			amount: BalanceOf<T>,
+		) -> DispatchResult {
+			let from = ensure_signed(origin)?;
+
+			// làm sao chuyển tiền
+			// làm sao call hàm transfer
+			T::MyCurrency::transfer(&from, &to, amount,ExistenceRequirement::KeepAlive )?;
+
+			Ok(())
+		}
 	}
 }
+
+// impl<T: Config> Currency<T::AccountId> for Pallet<T> {
+
+// }
