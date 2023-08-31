@@ -97,7 +97,8 @@ std = [
 	"pallet-kitties/std",
 	"pallet-todo/std",
 	"pallet-tightly-coupling/std",
-	"pallet-loosely-coupling/std"
+	"pallet-loosely-coupling/std",
+	"pallet-nicks/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",

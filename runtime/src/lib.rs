@@ -273,6 +273,7 @@ impl pallet_student::Config for Runtime {
 
 impl pallet_kitties::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type MyCurrency = Balances;
 }
 impl pallet_todo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -289,7 +290,7 @@ impl pallet_loosely_coupling::Config for Runtime {
 	type Amount = ConstU32<10>;
 }
 
-impl pallet_nicks::Config for Runtim {
+impl pallet_nicks::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 
 	/// The currency trait.

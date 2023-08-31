@@ -2,14 +2,14 @@
 
 pub use pallet::*;
 
-use frame_support::{inherent::Vec, pallet_prelude::*};
 use frame_support::dispatch::*;
+use frame_support::{inherent::Vec, pallet_prelude::*, traits::ExistenceRequirement};
 use frame_system::pallet_prelude::*;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
-// use std::fmt::{Debug, Formatter, Result}; ko sử dụng dc 
+// use std::fmt::{Debug, Formatter, Result}; ko sử dụng dc
 
 // Define Kitties
 // #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
@@ -21,26 +21,28 @@ mod tests;
 // 	pub owner: AccountId
 // }
 
+use frame_support::traits::Currency;
+type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+type BalanceOf<T> = <<T as Config>::MyCurrency as Currency<AccountIdOf<T>>>::Balance;
+
 #[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct Kitty<T: Config> {
 	pub dna: Vec<u8>,
-	pub price: BalanceOf<T>,
+	pub price: Option<BalanceOf<T>>,
 	pub gender: Gender,
 	pub owner: T::AccountId,
 }
 
-impl<T: Config > fmt::Debug for Kitty<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Kitty")
-         .field("dna", &self.dna)
-         .field("price", &self.price)
-         .field("gender", &self.gender)
-         .field("owner", &self.owner)
-         .finish()
-    }
-
-
+impl<T: Config> fmt::Debug for Kitty<T> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.debug_struct("Kitty")
+			.field("dna", &self.dna)
+			.field("price", &self.price)
+			.field("gender", &self.gender)
+			.field("owner", &self.owner)
+			.finish()
+	}
 }
 // Define Gender
 #[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -48,9 +50,7 @@ pub enum Gender {
 	Male,
 	Female,
 }
-use frame_support::traits::Currency;
-type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
-type BalanceOf<T> = <<T as Config>::MyCurrency as Currency<AccountIdOf<T>>>::Balance;
+
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -67,7 +67,6 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type MyCurrency: Currency<Self::AccountId>;
-		
 	}
 
 	// TODO : Define KittyId storage
@@ -92,9 +91,10 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		Created { kitty: Vec<u8>, owner: T::AccountId },
 		// Transfer
-		// Buy  
-		SetPrice {kitty: Vec<u8>, price: BalanceOf<T>},
-		
+		// Buy
+		SetPrice { kitty: Vec<u8>, price: Option<BalanceOf<T>> },
+		Sold { seller: T::AccountId, buyer: T::AccountId, kitty: Vec<u8>, price: BalanceOf<T> },
+		Transferred { from: T::AccountId, to: T::AccountId, kitty: Vec<u8> },
 	}
 
 	// Errors inform users that something went wrong.
@@ -103,7 +103,10 @@ pub mod pallet {
 		DuplicateKitty,
 		OverFlow,
 		NoKitty,
-		NotOwner
+		NotOwner,
+		TransferToSelf,
+		BidPriceTooLow,
+		NotForSale,
 	}
 
 	#[pallet::call]
@@ -118,23 +121,16 @@ pub mod pallet {
 			let gender = Self::gen_gender(&dna)?;
 			// TODO: define new kitty
 
-
 			// TODO: Check if the kitty does not already exist in our storage map
 			// using ensure!
 			ensure!(!Kitties::<T>::contains_key(&dna), Error::<T>::DuplicateKitty);
 			// return DuplicateKitty if error
-			let new_kitty = Kitty::<T> {
-				dna: dna.clone(),
-				gender,
-				price: 0u32.into(), 
-				owner: owner.clone()
-			
-			};
+			let new_kitty =
+				Kitty::<T> { dna: dna.clone(), gender, price: None, owner: owner.clone() };
 			log::info!("New kitty:{:?}", new_kitty);
 
 			// TODO: Get current kitty id
 			let current_id = Self::kitty_id();
-
 
 			// TODO: Increase kitty Id by 1 (if overflow return OverFlow)
 			let next_id = current_id.checked_add(1).ok_or(Error::<T>::OverFlow)?;
@@ -157,7 +153,11 @@ pub mod pallet {
 
 		#[pallet::call_index(1)]
 		#[pallet::weight(0)]
-		pub fn set_price(origin: OriginFor<T>, dna: Vec<u8>, amount: BalanceOf<T> ) -> DispatchResult {
+		pub fn set_price(
+			origin: OriginFor<T>,
+			dna: Vec<u8>,
+			amount: Option<BalanceOf<T>>,
+		) -> DispatchResult {
 			let owner = ensure_signed(origin)?;
 
 			// get kitty
@@ -172,16 +172,89 @@ pub mod pallet {
 			Ok(())
 		}
 
+		#[pallet::call_index(2)]
+		#[pallet::weight(0)]
+		pub fn buy_kitty(
+			origin: OriginFor<T>,
+			kitty_id: Vec<u8>,
+			price: BalanceOf<T>,
+		) -> DispatchResult {
+			// Make sure the caller is from a signed origin
+			let buyer = ensure_signed(origin)?;
+			// Transfer the kitty from seller to buyer as a sale
+			Self::do_transfer(kitty_id, buyer, Some(price))?;
+
+			Ok(())
+		}
 	}
 }
 
 // helper function
-impl<T> Pallet<T> {
+impl<T: Config> Pallet<T> {
 	fn gen_gender(dna: &Vec<u8>) -> Result<Gender, Error<T>> {
 		if dna.len() % 2 == 0 {
-			return Ok(Gender::Male)
+			return Ok(Gender::Male);
 		} else {
-			return Ok(Gender::Female)
+			return Ok(Gender::Female);
 		}
+	}
+
+	pub fn do_transfer(
+		kitty_id: Vec<u8>,
+		to: T::AccountId,
+		maybe_list_price: Option<BalanceOf<T>>,
+	) -> DispatchResult {
+		// Get the kitty
+		let mut kitty = Kitties::<T>::get(&kitty_id).ok_or(Error::<T>::NoKitty)?;
+		let from = kitty.owner;
+
+		ensure!(from != to, Error::<T>::TransferToSelf);
+		let mut from_owned = KittiesOwned::<T>::get(&from);
+
+		// Remove kitty from list of owned kitties.
+		if let Some(ind) = from_owned.iter().position(|id| *id == kitty_id) {
+			from_owned.swap_remove(ind);
+		} else {
+			return Err(Error::<T>::NoKitty.into());
+		}
+
+		// Add kitty to the list of owned kitties.
+		let mut to_owned = KittiesOwned::<T>::get(&to);
+		to_owned.push(kitty_id.clone());
+
+		// Mutating state here via a balance transfer, so nothing is allowed to fail after this.
+		// The buyer will always be charged the actual price. The limit_price parameter is just a
+		// protection so the seller isn't able to front-run the transaction.
+		if let Some(list_price) = maybe_list_price {
+			// Current kitty price if for sale
+			if let Some(price) = kitty.price {
+				ensure!(list_price >= price, Error::<T>::BidPriceTooLow);
+				// Transfer the amount from buyer to seller
+				T::MyCurrency::transfer(&to, &from, price, ExistenceRequirement::KeepAlive)?;
+				// Deposit sold event
+				Self::deposit_event(Event::Sold {
+					seller: from.clone(),
+					buyer: to.clone(),
+					kitty: kitty_id.clone(),
+					price,
+				});
+			} else {
+				// Kitty price is set to `None` and is not for sale
+				return Err(Error::<T>::NotForSale.into());
+			}
+		}
+
+		// Transfer succeeded, update the kitty owner and reset the price to `None`.
+		kitty.owner = to.clone();
+		kitty.price = None;
+
+		// Write updates to storage
+		Kitties::<T>::insert(&kitty_id, kitty);
+		KittiesOwned::<T>::insert(&to, to_owned);
+		KittiesOwned::<T>::insert(&from, from_owned);
+
+		Self::deposit_event(Event::Transferred { from, to, kitty: kitty_id });
+
+		Ok(())
 	}
 }
